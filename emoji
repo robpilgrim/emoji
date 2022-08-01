@@ -1,0 +1,47 @@
+#!/bin/sh
+LOC="$HOME/.config/emoji"
+PROVIDERS[0]="https://0x0.st"
+#PROVIDERS[1]="https://transfer.sh"
+#PROVIDERS[2]="https://file.io"
+#PROVIDERS[3]="https://oshi.at"
+#PROVIDERS[4]="https://filepush.co"
+
+size=${#PROVIDERS[@]}
+index=$(($RANDOM % $size))
+PR=${PROVIDERS[$index]}
+if command -v bemenu &> /dev/null
+then
+	MENU=bemenu
+elif command -v dmenu &> /dev/null
+then
+	MENU=dmenu
+else
+	echo "could not find a suitable menu"
+	exit
+fi
+EMTC=$(cat $LOC/emoticons)
+CHOICE=$((echo "$EMTC" && find $LOC -name "*" -type f -printf '%f\n' ) | $MENU -l 10 -p "Pick")
+EXT=$(echo $CHOICE | cut -d'.' -f2)
+SMILE=$(echo $CHOICE)
+TYPE=$(echo $WAYLAND_DISPLAY)
+if [ -z ${TYPE} ];
+then
+    if [[ $EXT == gif ]]
+    then
+	convert -resize 50x50 $LOC/$CHOICE - | curl -F'file=@-' $PR | xclip -selection clipboard
+    elif [[ $EXT == png ]]
+    then
+	convert -resize 50x50 $LOC/$CHOICE - | xclip -selection clipboard -t image/$EXT
+    else
+	echo "$EXT" | xclip -selection clipboard
+    fi
+
+else
+    if [[ $EXT == gif ]]
+    then
+	convert -resize 50x50 $LOC/$CHOICE - | curl -F'file=@-' $PR | wl-copy
+    else
+	convert -resize 50x50 $LOC/$CHOICE - | wl-copy --type image/$EXT
+    fi
+fi
+
